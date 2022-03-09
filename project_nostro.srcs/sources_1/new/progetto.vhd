@@ -56,7 +56,7 @@ architecture Behavioral of project_reti_logiche is
     signal half_word : std_logic;
     
 begin
-    MAIN: process(i_clk, i_rst)
+    process(i_clk, i_rst)
     -- The sequential process which asserts outputs and saves the values for the state
     begin
         if (i_rst = '1') then
@@ -88,13 +88,15 @@ begin
 
                 when COMPARE_WORD_COUNT =>
                     if (word_counter < word_number) then
-                        o_address <= conv_std_logic_vector(word_counter + 1, 16)
+                        o_address <= std_logic_vector(to_unsigned(word_counter + 1, 16));
                         word_counter <= word_counter+1;
                         o_en <= '1';
                         curr_state <= SET_BUFFER_IN;
 
                     else
                         curr_state <= DONE;
+                        
+                    end if;
 
                 when SET_BUFFER_IN =>
                     buffer_in <= i_data;
