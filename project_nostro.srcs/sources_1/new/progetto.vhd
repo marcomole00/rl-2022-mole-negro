@@ -4,7 +4,7 @@
 -- Prof. Fabio Salice - Anno 2021/2022
 --
 -- Pierluigi Negro (Codice Persona 10670080 Matricola 933774)
--- Marco Mol� (Codice Persona  Matricola )
+-- Marco Mole' (Codice Persona  Matricola )
 -- 
 ----------------------------------------------------------------------------------
 
@@ -176,8 +176,6 @@ begin
                         o_en <= '1';
                         o_data <= buffer_out;
                         o_address <= std_logic_vector(to_unsigned(word_counter * 2 + 998 + half_word, 16));
-
-                        
                     else
                         curr_state <= COMPUTE;
                     end if;
