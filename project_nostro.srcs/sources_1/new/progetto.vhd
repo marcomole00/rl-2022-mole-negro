@@ -51,9 +51,11 @@ architecture Behavioral of project_reti_logiche is
     signal buffer_in : std_logic_vector(7 downto 0);
     signal bit_counter : integer range 0 to 3;
     signal convolution_state : convolution_type;
-    signal pk1_out : std_logic;
-    signal pk2_out : std_logic;
-    signal half_word : std_logic;
+    signal p1k : std_logic;
+    signal p2k : std_logic;
+    signal half_word : integer range 0 to 1;
+    signal Uk : std_logic;
+
     
 begin
     process(i_clk, i_rst)
@@ -77,7 +79,7 @@ begin
                     o_we <= '0';
                     o_address <= (others => '0');
                     bit_counter <= 0;
-                    half_word <= '0';
+                    half_word <= 0;
                     convolution_state <= S0;
                     curr_state <= SET_WORD_NUMBER;
                 
@@ -101,11 +103,90 @@ begin
                 when SET_BUFFER_IN =>
                     buffer_in <= i_data;
                     o_en <= '0';
+                    Uk <= i_data(0);
                     curr_state <= COMPUTE;
-                
+
+                when COMPUTE =>
+                    case( convolution_state ) is
+                        when S0 =>
+                            if(Uk = '0') then
+                                convolution_state <= S0;
+                                p1k <= '0';
+                                p2k <= '0';
+                            elsif (Uk = '1') then
+                                convolution_state <= S2;
+                                p1k <= '1';
+                                p2k <= '1';
+                            
+                            end if;
+                        when S1 =>
+                            if(Uk = '0') then
+                                convolution_state <= S0;
+                                p1k <= '1';
+                                p2k <= '1';
+                            elsif (Uk = '1') then
+                                convolution_state <= S2;
+                                p1k <= '0';
+                                p2k <= '0';
+                            
+                            end if;
+                        when S2 =>
+                            if(Uk = '0') then
+                                convolution_state <= S1;
+                                p1k <= '0';
+                                p2k <= '1';
+                            elsif (Uk = '1') then
+                                convolution_state <= S3;
+                                p1k <= '1';
+                                p2k <= '0';
+                            
+                            end if;
+                        when S3 =>
+                            if(Uk = '0') then
+                                convolution_state <= S1;
+                                p1k <= '1';
+                                p2k <= '0';
+                            elsif (Uk = '1') then
+                                convolution_state <= S3;
+                                p1k <= '0';
+                                p2k <= '1';
+                            
+                            end if;
+                    
+                    end case ;
+                    curr_state <= WRITE_IN_BUFFER;
+
+                when WRITE_IN_BUFFER =>
+                    buffer_out(bit_counter) <= p1k;
+                    buffer_out(bit_counter + 1) <= p2k;
+
+                    if(bit_counter = 3) then
+                        bit_counter <= 0;
+                    else
+                        bit_counter <= bit_counter + 1;
+                    end if;
+
+                    curr_state <= COMPARE_BIT_COUNT;
+
+                when COMPARE_BIT_COUNT =>
+                    if(bit_counter = 0) then
+                        half_word <= 1 - half_word;
+                        curr_state <= WRITE_MEMORY;
+                        o_we <= '1';
+                        o_en <= '1';
+                        o_data <= buffer_out;
+                        o_address <= std_logic_vector(to_unsigned(word_counter * 2 + 998 + half_word, 16));
 
                         
+                    else
+                        curr_state <= COMPUTE;
+                    end if;
+                
+                when WRITE_MEMORY =>
                     
+
+
+
 
         end if;
     end process;
