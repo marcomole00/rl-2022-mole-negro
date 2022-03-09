@@ -183,11 +183,12 @@ begin
                     end if;
                 
                 when WRITE_MEMORY =>
-                    
+                    -- da fare
 
+                when COMPARE_HALF_WORD =>
+                    -- da fare
 
-
-
+                end case;
         end if;
     end process;
 end Behavioral;
