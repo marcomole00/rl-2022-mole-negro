@@ -193,6 +193,7 @@ begin
                         curr_state <= COMPARE_WORD_COUNT;
                     else 
                         curr_state <= COMPUTE;
+                    end if;
 
                 end case;
         end if;
