@@ -181,10 +181,18 @@ begin
                     end if;
                 
                 when WRITE_MEMORY =>
-                    -- da fare
+                    -- non so se è giusto 
+                    -- potrebbe essere mergiato con COMPARE_HALF_WORD
+                    
+                    o_we <= '0';
+                    o_en <= '0';
+                    curr_state <= COMPARE_HALF_WORD;
 
                 when COMPARE_HALF_WORD =>
-                    -- da fare
+                    if(half_word = 0) then 
+                        curr_state <= COMPARE_WORD_COUNT;
+                    else 
+                        curr_state <= COMPUTE;
 
                 end case;
         end if;
