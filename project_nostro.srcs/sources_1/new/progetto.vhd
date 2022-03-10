@@ -70,6 +70,7 @@ begin
             case curr_state is
                 when IDLE =>
                     if(i_start = '1') then
+                        o_en <= '1'; --necessario se no non legge in tempo la memeoria
                         curr_state <= INIT;
                     end if;
                 
