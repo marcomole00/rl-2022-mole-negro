@@ -80,7 +80,7 @@ begin
                     o_we <= '0';
                     o_address <= (others => '0');
                     bit_counter <= 0;
-                    half_word <= 0;
+                    half_word <= 1;
                     convolution_state <= S0;
                     curr_state <= SET_WORD_NUMBER;
                 
@@ -104,7 +104,7 @@ begin
                 when SET_BUFFER_IN =>
                     buffer_in <= i_data;
                     o_en <= '0';
-                    Uk <= i_data(0);
+                    Uk <= i_data(7);
                     curr_state <= COMPUTE;
 
                 when COMPUTE =>
@@ -176,8 +176,9 @@ begin
                         o_we <= '1';
                         o_en <= '1';
                         o_data <= buffer_out;
-                        o_address <= std_logic_vector(to_unsigned(word_counter * 2 + 998 + half_word, 16));
+                        o_address <= std_logic_vector(to_unsigned(word_counter * 2 + 998 + (1 - half_word), 16));
                     else
+                        Uk <= i_data(4 * half_word + 3 - bit_counter);
                         curr_state <= COMPUTE;
                     end if;
                 
@@ -190,9 +191,10 @@ begin
                     curr_state <= COMPARE_HALF_WORD;
 
                 when COMPARE_HALF_WORD =>
-                    if(half_word = 0) then 
+                    if(half_word = 1) then 
                         curr_state <= COMPARE_WORD_COUNT;
-                    else 
+                    else
+                        Uk <= i_data(3);
                         curr_state <= COMPUTE;
                     end if;
 
