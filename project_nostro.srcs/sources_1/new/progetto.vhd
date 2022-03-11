@@ -44,7 +44,7 @@ architecture Behavioral of project_reti_logiche is
 
     type convolution_type is (S0, S1, S2, S3);
     
-    signal curr_state, next_state : state_type;
+    signal curr_state : state_type;
     signal word_counter : integer range 0 to 255;
     signal word_number : integer range 0 to 255;
     signal buffer_out : std_logic_vector(7 downto 0);
@@ -159,8 +159,8 @@ begin
                     curr_state <= WRITE_IN_BUFFER;
 
                 when WRITE_IN_BUFFER =>
-                    buffer_out(bit_counter) <= p1k;
-                    buffer_out(bit_counter + 1) <= p2k;
+                    buffer_out(7 - bit_counter * 2) <= p1k;
+                    buffer_out(6 - bit_counter * 2) <= p2k;
 
                     if(bit_counter = 3) then
                         bit_counter <= 0;
@@ -201,6 +201,7 @@ begin
 
                 when DONE =>
                     if(i_start = '0') then
+                        o_done <= '0';
                         curr_state <= IDLE;
                     end if;
                 end case;
