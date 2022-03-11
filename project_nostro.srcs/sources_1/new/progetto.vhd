@@ -177,9 +177,11 @@ begin
                         o_we <= '1';
                         o_en <= '1';
                         o_data <= buffer_out;
+                        buffer_out <= (others => '0');
                         o_address <= std_logic_vector(to_unsigned(word_counter * 2 + 998 + (1 - half_word), 16));
+                        Uk <= buffer_in(3)
                     else
-                        Uk <= i_data(4 * half_word + 3 - bit_counter);
+                        Uk <= buffer_in(4 * half_word + 3 - bit_counter);
                         curr_state <= COMPUTE;
                     end if;
                 
