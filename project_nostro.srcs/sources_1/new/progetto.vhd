@@ -97,6 +97,7 @@ begin
                         curr_state <= SET_BUFFER_IN;
 
                     else
+                        o_done <= '1';
                         curr_state <= DONE;
                         
                     end if;
@@ -198,6 +199,10 @@ begin
                         curr_state <= COMPUTE;
                     end if;
 
+                when DONE =>
+                    if(i_start = '0') then
+                        curr_state <= IDLE;
+                    end if;
                 end case;
         end if;
     end process;
