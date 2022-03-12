@@ -176,8 +176,8 @@ begin
                         buffer_out(buffer_index * 2 - 8) <= p2k;
                     
                     else
-                        buffer_out(7 - buffer_index * 2) <= p1k;
-                        buffer_out(6 - buffer_index * 2) <= p2k;
+                        buffer_out(buffer_index * 2 + 1) <= p1k;
+                        buffer_out(buffer_index * 2) <= p2k;
 
                     end if;
 
