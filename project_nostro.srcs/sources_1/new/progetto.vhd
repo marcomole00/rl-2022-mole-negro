@@ -31,8 +31,10 @@ architecture Behavioral of project_reti_logiche is
     type state_type is (
         IDLE,
         INIT,
+        WAIT_WORD_NUMBER,
         SET_WORD_NUMBER,
         COMPARE_WORD_COUNT,
+        WAIT_BUFFER_IN,
         SET_BUFFER_IN,
         COMPUTE,
         WRITE_IN_BUFFER,
@@ -49,11 +51,11 @@ architecture Behavioral of project_reti_logiche is
     signal word_number : integer range 0 to 255;
     signal buffer_out : std_logic_vector(7 downto 0);
     signal buffer_in : std_logic_vector(7 downto 0);
-    signal bit_counter : integer range 0 to 3;
+    signal buffer_index : integer range 0 to 7;
     signal convolution_state : convolution_type;
     signal p1k : std_logic;
     signal p2k : std_logic;
-    signal half_word : integer range 0 to 1;
+    --signal half_word : integer range 0 to 1;
     signal Uk : std_logic;
 
     
@@ -66,11 +68,13 @@ begin
             curr_state <= IDLE;
             o_en <= '0';
             o_we <= '0';
+
         elsif rising_edge(i_clk) then
+
             case curr_state is
                 when IDLE =>
                     if(i_start = '1') then
-                        o_en <= '1'; --necessario se no non legge in tempo la memeoria
+                        --o_en <= '1'; --necessario se no non legge in tempo la memeoria
                         curr_state <= INIT;
                     end if;
                 
@@ -78,10 +82,14 @@ begin
                     word_counter <= 0;
                     o_en <= '1';
                     o_we <= '0';
+                    o_done <= '0';
                     o_address <= (others => '0');
-                    bit_counter <= 0;
-                    half_word <= 1;
+                    buffer_index <= 7;
                     convolution_state <= S0;
+                    curr_state <= WAIT_WORD_NUMBER;
+                
+                when WAIT_WORD_NUMBER =>
+                    -- dobbiamo aspettare un giro di clock in più per la lettura efficace
                     curr_state <= SET_WORD_NUMBER;
                 
                 when SET_WORD_NUMBER =>
@@ -94,14 +102,18 @@ begin
                         o_address <= std_logic_vector(to_unsigned(word_counter + 1, 16));
                         word_counter <= word_counter+1;
                         o_en <= '1';
-                        curr_state <= SET_BUFFER_IN;
+                        curr_state <= WAIT_BUFFER_IN;
 
                     else
                         o_done <= '1';
                         curr_state <= DONE;
                         
                     end if;
+                
 
+                when WAIT_BUFFER_IN =>
+                    curr_state <= SET_BUFFER_IN;
+                
                 when SET_BUFFER_IN =>
                     buffer_in <= i_data;
                     o_en <= '0';
@@ -159,29 +171,43 @@ begin
                     curr_state <= WRITE_IN_BUFFER;
 
                 when WRITE_IN_BUFFER =>
-                    buffer_out(7 - bit_counter * 2) <= p1k;
-                    buffer_out(6 - bit_counter * 2) <= p2k;
-
-                    if(bit_counter = 3) then
-                        bit_counter <= 0;
+                    if(buffer_index > 3) then
+                        buffer_out(buffer_index * 2 - 7) <= p1k;
+                        buffer_out(buffer_index * 2 - 8) <= p2k;
+                    
                     else
-                        bit_counter <= bit_counter + 1;
+                        buffer_out(buffer_index * 2 + 1) <= p1k;
+                        buffer_out(buffer_index * 2) <= p2k;
+
+                    end if;
+
+                    if(buffer_index = 0) then
+                        buffer_index <= 7;
+                    else
+                        buffer_index <= buffer_index - 1;
                     end if;
 
                     curr_state <= COMPARE_BIT_COUNT;
 
                 when COMPARE_BIT_COUNT =>
-                    if(bit_counter = 0) then
-                        half_word <= 1 - half_word;
-                        curr_state <= WRITE_MEMORY;
+                    if(buffer_index = 7 or buffer_index = 3) then
+                        
                         o_we <= '1';
                         o_en <= '1';
                         o_data <= buffer_out;
-                        buffer_out <= (others => '0');
-                        o_address <= std_logic_vector(to_unsigned(word_counter * 2 + 998 + (1 - half_word), 16));
-                        Uk <= buffer_in(3)
+                        --buffer_out <= (others => '0');
+                        
+                        if(buffer_index = 3) then
+                            o_address <= std_logic_vector(to_unsigned(word_counter * 2 + 998, 16));
+                        else
+                            o_address <= std_logic_vector(to_unsigned(word_counter * 2 + 999, 16));
+                            Uk <= buffer_in(buffer_index);
+                        end if;
+
+                        curr_state <= WRITE_MEMORY;
+
                     else
-                        Uk <= buffer_in(4 * half_word + 3 - bit_counter);
+                        Uk <= buffer_in(buffer_index);
                         curr_state <= COMPUTE;
                     end if;
                 
@@ -194,10 +220,10 @@ begin
                     curr_state <= COMPARE_HALF_WORD;
 
                 when COMPARE_HALF_WORD =>
-                    if(half_word = 1) then 
+                    if(buffer_index = 7) then 
                         curr_state <= COMPARE_WORD_COUNT;
                     else
-                        Uk <= i_data(3);
+                        Uk <= buffer_in(buffer_index);
                         curr_state <= COMPUTE;
                     end if;
 
