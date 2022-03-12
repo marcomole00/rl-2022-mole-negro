@@ -31,7 +31,7 @@ architecture Behavioral of project_reti_logiche is
     type state_type is (
         IDLE,
         INIT,
-        --WAIT_WORD_NUMBER,
+        WAIT_WORD_NUMBER,
         SET_WORD_NUMBER,
         COMPARE_WORD_COUNT,
         WAIT_BUFFER_IN,
@@ -55,6 +55,7 @@ architecture Behavioral of project_reti_logiche is
     signal convolution_state : convolution_type;
     signal p1k : std_logic;
     signal p2k : std_logic;
+    --signal half_word : integer range 0 to 1;
     signal Uk : std_logic;
 
     
@@ -73,7 +74,7 @@ begin
             case curr_state is
                 when IDLE =>
                     if(i_start = '1') then
-                        o_en <= '1'; --bisogna mettere o_en a 1 due stati prima della lettura effettiva dalla memoria
+                        --o_en <= '1'; --necessario se no non legge in tempo la memeoria
                         curr_state <= INIT;
                     end if;
                 
@@ -85,19 +86,17 @@ begin
                     o_address <= (others => '0');
                     buffer_index <= 7;
                     convolution_state <= S0;
-                    curr_state <= SET_WORD_NUMBER;
-                    --curr_state <= WAIT_WORD_NUMBER;
+                    curr_state <= WAIT_WORD_NUMBER;
                 
-                --when WAIT_WORD_NUMBER =>
-                --    -- alternativa a mettere o_en a 1 in idle
-                --    curr_state <= SET_WORD_NUMBER;
+                when WAIT_WORD_NUMBER =>
+                    -- dobbiamo aspettare un giro di clock in più per la lettura efficace
+                    curr_state <= SET_WORD_NUMBER;
                 
                 when SET_WORD_NUMBER =>
                     word_number <= to_integer(unsigned(i_data));
                     o_en <= '0';
                     curr_state <= COMPARE_WORD_COUNT;
 
-                -- si potrebbe comparare il numero di parole in COMPARE_HALF_WORD invece che all'inizio, e spostare o_en <= '1'
                 when COMPARE_WORD_COUNT =>
                     if (word_counter < word_number) then
                         o_address <= std_logic_vector(to_unsigned(word_counter + 1, 16));
@@ -109,7 +108,8 @@ begin
                         o_done <= '1';
                         curr_state <= DONE;
                         
-                    end if;                
+                    end if;
+                
 
                 when WAIT_BUFFER_IN =>
                     curr_state <= SET_BUFFER_IN;
@@ -180,24 +180,22 @@ begin
                         buffer_out(buffer_index * 2) <= p2k;
 
                     end if;
-                    
-                    -- controllare con le prossime sintesi se si può fare e se ha senso farlo
-                    buffer_index <= (buffer_index + 7) mod 8;
-                    --if(buffer_index = 0) then
-                    --    buffer_index <= 7;
-                    --else
-                    --    buffer_index <= buffer_index - 1;
-                    --end if;
+
+                    if(buffer_index = 0) then
+                        buffer_index <= 7;
+                    else
+                        buffer_index <= buffer_index - 1;
+                    end if;
 
                     curr_state <= COMPARE_BIT_COUNT;
 
-                -- cambiare nome allo stato
                 when COMPARE_BIT_COUNT =>
                     if(buffer_index = 7 or buffer_index = 3) then
                         
                         o_we <= '1';
                         o_en <= '1';
                         o_data <= buffer_out;
+                        --buffer_out <= (others => '0');
                         
                         if(buffer_index = 3) then
                             o_address <= std_logic_vector(to_unsigned(word_counter * 2 + 998, 16));
@@ -216,11 +214,11 @@ begin
                 when WRITE_MEMORY =>
                     -- non so se è giusto 
                     -- potrebbe essere mergiato con COMPARE_HALF_WORD
+                    
                     o_we <= '0';
                     o_en <= '0';
                     curr_state <= COMPARE_HALF_WORD;
 
-                -- cambiare nome allo stato
                 when COMPARE_HALF_WORD =>
                     if(buffer_index = 7) then 
                         curr_state <= COMPARE_WORD_COUNT;
@@ -234,8 +232,7 @@ begin
                         o_done <= '0';
                         curr_state <= IDLE;
                     end if;
-
-            end case;
+                end case;
         end if;
     end process;
 end Behavioral;
