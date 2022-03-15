@@ -111,8 +111,8 @@ begin
                     end if;
                 
 
-                when WAIT_BUFFER_IN =>
-                    curr_state <= SET_BUFFER_IN;
+               when WAIT_BUFFER_IN =>
+                  curr_state <= SET_BUFFER_IN;
                 
                 when SET_BUFFER_IN =>
                     buffer_in <= i_data;
