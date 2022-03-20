@@ -10,7 +10,6 @@
 --this is a test commit
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
-use IEEE.STD_LOGIC_UNSIGNED.ALL;
 use IEEE.NUMERIC_STD.ALL;
 
 entity project_reti_logiche is
@@ -29,49 +28,50 @@ end project_reti_logiche;
 
 architecture Behavioral of project_reti_logiche is
     type state_type is (
-        IDLE,
-        WAIT_WORD_NUMBER,
-        SET_WORD_NUMBER,
-        COMPARE_WORD_COUNT,
-        WAIT_BUFFER_IN,
-        SET_BUFFER_IN,
-        COMPUTE,
-        WRITE_IN_BUFFER,
-        COMPARE_BIT_COUNT,
-        WRITE_MEMORY,
-        DONE
+        IDLE,                   -- Idling, waiting for start signal
+      --  INIT,                   -- Initializing all values to be ready
+        WAIT_WORD_NUMBER,       -- Waiting for the memory to load the number of words to consider
+        SET_WORD_NUMBER,        -- Registering the number of word to consider
+        COMPARE_WORD_COUNT,     -- Comparing the number of words already considered to the number of words to consider
+        WAIT_BUFFER_IN,         -- Waiting for the memory to load the current word to consider
+        SET_BUFFER_IN,          -- Registering the current word to consider
+        COMPUTE,                -- Calculating the outputs of the FSM considering a single bit input at a time
+        WRITE_IN_BUFFER,        -- Storing the outputs computed in buffer_out, to be then copied into memory 
+        COMPARE_BIT_COUNT,      -- Checking if buffer_out is ready to be copied into memory
+        WRITE_MEMORY,           -- to be merged with next state
+    --    COMPARE_HALF_WORD,      -- to be merged with previous state
+        DONE                    -- Waiting for i_start to be put to '0'
     );
 
     type convolution_type is (S0, S1, S2, S3);
     
     signal curr_state : state_type;
-    signal word_counter : integer range 0 to 255;
-    signal word_number : integer range 0 to 255;
-    signal buffer_out : std_logic_vector(7 downto 0);
-    signal buffer_in : std_logic_vector(7 downto 0);
-    signal buffer_index : integer range 0 to 7;
-    signal convolution_state : convolution_type;
-    signal p1k : std_logic;
-    signal p2k : std_logic;
-    --signal half_word : integer range 0 to 1;
-    signal Uk : std_logic;
+    signal word_counter : integer range 0 to 255;       -- Keeps track of how many words we considered
+    signal word_number : integer range 0 to 255;        -- Stores the number of words to consider
+    signal buffer_out : std_logic_vector(7 downto 0);   -- Stores the partial results of the FSM computation and is eventually copied to memory
+    signal buffer_in : std_logic_vector(7 downto 0);    -- Stores the current considered word
+    signal buffer_index : integer range 0 to 7;         -- Acts as an array index for the single bit to be considered in buffer_in
+    signal convolution_state : convolution_type;        -- Saves the current state of the convolution computation
+    signal p1k : std_logic;                             -- First output of the convolution computation
+    signal p2k : std_logic;                             -- Second output of the convolution computation
+    signal Uk : std_logic;                              -- Input for the convolution computation
 
     
 begin
     process(i_clk, i_rst)
     begin
+        -- Takes into account the asynchronous behaviour of i_rst
         if (i_rst = '1') then
-            -- reset asincrono 
             curr_state <= IDLE;
             o_en <= '0';
             o_we <= '0';
 
         elsif rising_edge(i_clk) then
-
             case curr_state is
+                
                 when IDLE =>
                     if(i_start = '1') then
-                                  
+                
                     word_counter <= 0;
                     o_en <= '1';
                     o_we <= '0';
@@ -84,7 +84,6 @@ begin
                     end if ;
                 
                 when WAIT_WORD_NUMBER =>
-                    -- dobbiamo aspettare un giro di clock in più per la lettura efficace
                     curr_state <= SET_WORD_NUMBER;
                 
                 when SET_WORD_NUMBER =>
@@ -105,8 +104,7 @@ begin
                         
                     end if;
                 
-
-               when WAIT_BUFFER_IN =>
+                when WAIT_BUFFER_IN =>
                   curr_state <= SET_BUFFER_IN;
                 
                 when SET_BUFFER_IN =>
@@ -125,8 +123,7 @@ begin
                             elsif (Uk = '1') then
                                 convolution_state <= S2;
                                 p1k <= '1';
-                                p2k <= '1';
-                            
+                                p2k <= '1';                            
                             end if;
                         when S1 =>
                             if(Uk = '0') then
@@ -136,8 +133,7 @@ begin
                             elsif (Uk = '1') then
                                 convolution_state <= S2;
                                 p1k <= '0';
-                                p2k <= '0';
-                            
+                                p2k <= '0';                            
                             end if;
                         when S2 =>
                             if(Uk = '0') then
@@ -147,8 +143,7 @@ begin
                             elsif (Uk = '1') then
                                 convolution_state <= S3;
                                 p1k <= '1';
-                                p2k <= '0';
-                            
+                                p2k <= '0';                            
                             end if;
                         when S3 =>
                             if(Uk = '0') then
@@ -158,24 +153,24 @@ begin
                             elsif (Uk = '1') then
                                 convolution_state <= S3;
                                 p1k <= '0';
-                                p2k <= '1';
-                            
-                            end if;
-                    
+                                p2k <= '1';                            
+                            end if;                    
                     end case ;
                     curr_state <= WRITE_IN_BUFFER;
 
                 when WRITE_IN_BUFFER =>
+                    -- We have to consider buffer index mod 4:
+                    -- indexes from 7 to 4 will generate an output word, indexes from 3 to 0 will generate a second output word
+                    -- We also have to place p1k always before p2k in the output word to create the correct output
                     if(buffer_index > 3) then
                         buffer_out(buffer_index * 2 - 7) <= p1k;
-                        buffer_out(buffer_index * 2 - 8) <= p2k;
-                    
+                        buffer_out(buffer_index * 2 - 8) <= p2k;                    
                     else
                         buffer_out(buffer_index * 2 + 1) <= p1k;
                         buffer_out(buffer_index * 2) <= p2k;
-
                     end if;
 
+                    -- buffer_index is to be considered an "array index", going from 7 -> 0 then back to 7 to fully parse an input word
                     if(buffer_index = 0) then
                         buffer_index <= 7;
                     else
@@ -185,17 +180,21 @@ begin
                     curr_state <= COMPARE_BIT_COUNT;
 
                 when COMPARE_BIT_COUNT =>
-                    if(buffer_index = 7 or buffer_index = 3) then
-                        
+                    -- If buffer_index is at the beginning or in the middle of a word: we just filled buffer_out, which is to be written in memory
+                    if(buffer_index = 7 or buffer_index = 3) then                        
                         o_we <= '1';
                         o_en <= '1';
                         o_data <= buffer_out;
                         
+                        -- Every input word creates two output words and word_counter only counts input words ->
+                        -- we have to double word_counter and offset it so that the first output word is at address = 1000 and the next outputs follow that address
                         if(buffer_index = 3) then
+                            -- buffer_index = 3 -> we finished computing the first half of the input word, we have a full output word
                             o_address <= std_logic_vector(to_unsigned(word_counter * 2 + 998, 16));
+                            Uk <= buffer_in(3);
                         else
+                            -- buffer_index = 7 -> we finished computing the second half of the input word, we have the second full output word
                             o_address <= std_logic_vector(to_unsigned(word_counter * 2 + 999, 16));
-                            Uk <= buffer_in(buffer_index);
                         end if;
 
                         curr_state <= WRITE_MEMORY;
@@ -205,15 +204,16 @@ begin
                         curr_state <= COMPUTE;
                     end if;
                 
+
                 when WRITE_MEMORY =>
                     
                     o_we <= '0';
                     o_en <= '0';
                     
-                    if(buffer_index = 7) then 
+                    if(buffer_index = 7) then  -- buffer_index = 7 -> we finished computing a full input word
+
                         curr_state <= COMPARE_WORD_COUNT;
                     else
-                        Uk <= buffer_in(buffer_index);
                         curr_state <= COMPUTE;
                     end if;
 
