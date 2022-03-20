@@ -7,7 +7,7 @@
 -- Marco Mole' (Codice Persona 10676087 Matricola 932376)
 -- 
 ----------------------------------------------------------------------------------
-
+--this is a test commit
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
@@ -29,7 +29,7 @@ end project_reti_logiche;
 architecture Behavioral of project_reti_logiche is
     type state_type is (
         IDLE,                   -- Idling, waiting for start signal
-        INIT,                   -- Initializing all values to be ready
+      --  INIT,                   -- Initializing all values to be ready
         WAIT_WORD_NUMBER,       -- Waiting for the memory to load the number of words to consider
         SET_WORD_NUMBER,        -- Registering the number of word to consider
         COMPARE_WORD_COUNT,     -- Comparing the number of words already considered to the number of words to consider
@@ -39,7 +39,7 @@ architecture Behavioral of project_reti_logiche is
         WRITE_IN_BUFFER,        -- Storing the outputs computed in buffer_out, to be then copied into memory 
         COMPARE_BIT_COUNT,      -- Checking if buffer_out is ready to be copied into memory
         WRITE_MEMORY,           -- to be merged with next state
-        COMPARE_HALF_WORD,      -- to be merged with previous state
+    --    COMPARE_HALF_WORD,      -- to be merged with previous state
         DONE                    -- Waiting for i_start to be put to '0'
     );
 
@@ -71,10 +71,7 @@ begin
                 
                 when IDLE =>
                     if(i_start = '1') then
-                        curr_state <= INIT;
-                    end if;
                 
-                when INIT =>
                     word_counter <= 0;
                     o_en <= '1';
                     o_we <= '0';
@@ -83,6 +80,8 @@ begin
                     buffer_index <= 7;
                     convolution_state <= S0;
                     curr_state <= WAIT_WORD_NUMBER;
+
+                    end if ;
                 
                 when WAIT_WORD_NUMBER =>
                     curr_state <= SET_WORD_NUMBER;
@@ -205,14 +204,14 @@ begin
                         curr_state <= COMPUTE;
                     end if;
                 
-                when WRITE_MEMORY =>                    
+
+                when WRITE_MEMORY =>
+                    
                     o_we <= '0';
                     o_en <= '0';
-                    curr_state <= COMPARE_HALF_WORD;
+                    
+                    if(buffer_index = 7) then  -- buffer_index = 7 -> we finished computing a full input word
 
-                when COMPARE_HALF_WORD =>
-                    if(buffer_index = 7) then
-                        -- buffer_index = 7 -> we finished computing a full input word
                         curr_state <= COMPARE_WORD_COUNT;
                     else
                         curr_state <= COMPUTE;
@@ -223,6 +222,9 @@ begin
                         o_done <= '0';
                         curr_state <= IDLE;
                     end if;
+                    
+                when others =>
+                
                 end case;
         end if;
     end process;
