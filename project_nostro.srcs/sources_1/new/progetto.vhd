@@ -30,7 +30,6 @@ end project_reti_logiche;
 architecture Behavioral of project_reti_logiche is
     type state_type is (
         IDLE,
-        INIT,
         WAIT_WORD_NUMBER,
         SET_WORD_NUMBER,
         COMPARE_WORD_COUNT,
@@ -40,7 +39,6 @@ architecture Behavioral of project_reti_logiche is
         WRITE_IN_BUFFER,
         COMPARE_BIT_COUNT,
         WRITE_MEMORY,
-        COMPARE_HALF_WORD,
         DONE
     );
 
@@ -61,10 +59,9 @@ architecture Behavioral of project_reti_logiche is
     
 begin
     process(i_clk, i_rst)
-    -- The sequential process which asserts outputs and saves the values for the state
     begin
         if (i_rst = '1') then
-            -- Asynchronously reset the machine
+            -- reset asincrono 
             curr_state <= IDLE;
             o_en <= '0';
             o_we <= '0';
@@ -74,11 +71,7 @@ begin
             case curr_state is
                 when IDLE =>
                     if(i_start = '1') then
-                        --o_en <= '1'; --necessario se no non legge in tempo la memeoria
-                        curr_state <= INIT;
-                    end if;
-                
-                when INIT =>
+                                  
                     word_counter <= 0;
                     o_en <= '1';
                     o_we <= '0';
@@ -87,6 +80,8 @@ begin
                     buffer_index <= 7;
                     convolution_state <= S0;
                     curr_state <= WAIT_WORD_NUMBER;
+
+                    end if ;
                 
                 when WAIT_WORD_NUMBER =>
                     -- dobbiamo aspettare un giro di clock in più per la lettura efficace
@@ -195,7 +190,6 @@ begin
                         o_we <= '1';
                         o_en <= '1';
                         o_data <= buffer_out;
-                        --buffer_out <= (others => '0');
                         
                         if(buffer_index = 3) then
                             o_address <= std_logic_vector(to_unsigned(word_counter * 2 + 998, 16));
@@ -212,14 +206,10 @@ begin
                     end if;
                 
                 when WRITE_MEMORY =>
-                    -- non so se è giusto 
-                    -- potrebbe essere mergiato con COMPARE_HALF_WORD
                     
                     o_we <= '0';
                     o_en <= '0';
-                    curr_state <= COMPARE_HALF_WORD;
-
-                when COMPARE_HALF_WORD =>
+                    
                     if(buffer_index = 7) then 
                         curr_state <= COMPARE_WORD_COUNT;
                     else
@@ -232,6 +222,9 @@ begin
                         o_done <= '0';
                         curr_state <= IDLE;
                     end if;
+                    
+                when others =>
+                
                 end case;
         end if;
     end process;

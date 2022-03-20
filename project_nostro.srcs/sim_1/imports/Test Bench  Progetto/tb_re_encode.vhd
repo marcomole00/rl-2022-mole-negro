@@ -1,4 +1,4 @@
--- Test : codifica di più flussi uno dopo l'altro (3 flussi)
+-- Test : codifica di piï¿½ flussi uno dopo l'altro (3 flussi)
 
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
