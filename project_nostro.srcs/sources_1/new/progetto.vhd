@@ -28,8 +28,7 @@ end project_reti_logiche;
 
 architecture Behavioral of project_reti_logiche is
     type state_type is (
-        IDLE,                   -- Idling, waiting for start signal
-      --  INIT,                   -- Initializing all values to be ready
+        IDLE,                   -- Idling. On start signal: initializes all
         WAIT_WORD_NUMBER,       -- Waiting for the memory to load the number of words to consider
         SET_WORD_NUMBER,        -- Registering the number of word to consider
         COMPARE_WORD_COUNT,     -- Comparing the number of words already considered to the number of words to consider
@@ -38,8 +37,7 @@ architecture Behavioral of project_reti_logiche is
         COMPUTE,                -- Calculating the outputs of the FSM considering a single bit input at a time
         WRITE_IN_BUFFER,        -- Storing the outputs computed in buffer_out, to be then copied into memory 
         COMPARE_BIT_COUNT,      -- Checking if buffer_out is ready to be copied into memory
-        WRITE_MEMORY,           -- to be merged with next state
-    --    COMPARE_HALF_WORD,      -- to be merged with previous state
+        WRITE_MEMORY,           -- Changes memory enablers to 0, checks for loop conditions
         DONE                    -- Waiting for i_start to be put to '0'
     );
 
@@ -71,16 +69,14 @@ begin
                 
                 when IDLE =>
                     if(i_start = '1') then
-                
-                    word_counter <= 0;
-                    o_en <= '1';
-                    o_we <= '0';
-                    o_done <= '0';
-                    o_address <= (others => '0');
-                    buffer_index <= 7;
-                    convolution_state <= S0;
-                    curr_state <= WAIT_WORD_NUMBER;
-
+                        word_counter <= 0;
+                        o_en <= '1';
+                        o_we <= '0';
+                        o_done <= '0';
+                        o_address <= (others => '0');
+                        buffer_index <= 7;
+                        convolution_state <= S0;
+                        curr_state <= WAIT_WORD_NUMBER;
                     end if ;
                 
                 when WAIT_WORD_NUMBER =>
@@ -206,12 +202,10 @@ begin
                 
 
                 when WRITE_MEMORY =>
-                    
                     o_we <= '0';
                     o_en <= '0';
-                    
-                    if(buffer_index = 7) then  -- buffer_index = 7 -> we finished computing a full input word
-
+                    if(buffer_index = 7) then
+                        -- buffer_index = 7 -> we finished computing a full input word
                         curr_state <= COMPARE_WORD_COUNT;
                     else
                         curr_state <= COMPUTE;
