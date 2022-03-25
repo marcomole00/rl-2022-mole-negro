@@ -5,10 +5,15 @@
 \save_transient_properties true
 \origin unavailable
 \textclass article
+\begin_preamble
+\usepackage{tikz} 
+\usepackage{pgf}
+\usetikzlibrary{arrows,automata, positioning}
+\end_preamble
 \use_default_options true
 \maintain_unincluded_children false
-\language english
-\language_package default
+\language italian
+\language_package babel
 \inputencoding auto
 \fontencoding global
 \font_roman "default" "default"
@@ -29,6 +34,7 @@
 \bibtex_command default
 \index_command default
 \paperfontsize default
+\spacing single
 \use_hyperref false
 \papersize default
 \use_geometry false
@@ -44,6 +50,7 @@
 \use_package undertilde 1
 \cite_engine basic
 \cite_engine_type default
+\biblio_style plain
 \use_bibtopic false
 \use_indices false
 \paperorientation portrait
@@ -61,7 +68,7 @@
 \paragraph_indentation default
 \is_math_indent 0
 \math_numbering_side default
-\quotes_style english
+\quotes_style french
 \dynamic_quotes 0
 \papercolumns 1
 \papersides 1
@@ -86,16 +93,52 @@ Reti Logiche
 
 \begin_layout Author
 Pierluigi Negro c.p.
- 000000
+ 10670080
 \begin_inset Newline newline
 \end_inset
 
-Marco Molè c.p.
+Marco Molè 
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+quad 
+\backslash
+space 
+\end_layout
+
+\end_inset
+
+c.p.
  10676087
 \end_layout
 
+\begin_layout Date
+Referente: Prof.
+ Fabio Salice
+\end_layout
+
+\begin_layout Standard
+\begin_inset CommandInset toc
+LatexCommand tableofcontents
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Newpage newpage
+\end_inset
+
+
+\end_layout
+
 \begin_layout Section
-Specifica
+Specifica 
 \end_layout
 
 \begin_layout Standard
@@ -104,7 +147,7 @@ Il progetto consiste nell'implementare un codificatore convoluzionale con
 \begin_inset Formula $\ensuremath{\frac{1}{2}}$
 \end_inset
 
- che si interfacci con una semplice memoria contente parole da 8 bit .
+ che si interfacci con una semplice memoria contente parole da 8 bit.
  Il linguaggio di descrizione dell'hardware usato è VHDL.
  Il codificatore convoluzionale, d'ora in poi CC, è rappresentabile con
  la seguente macchina di Moore.
@@ -115,9 +158,9 @@ INSERIRE IMMAGINE MACCHINA
 \end_layout
 
 \begin_layout Standard
-Siccome il CC ha in input e in output degli stream di bit il modulo HW dovrà
- occuparsi della serializzazione e de-serializzazione dei due flussi.
- In particolare il flusso di uscita verrà de-serializzato con un concatenamento
+Siccome il CC ha in input e in output degli stream di bit, il modulo HW
+ dovrà occuparsi della serializzazione e de-serializzazione dei due flussi.
+ In particolare il flusso in uscita verrà de-serializzato con un concatenamento
  alternato.
  
 \end_layout
@@ -126,20 +169,621 @@ Siccome il CC ha in input e in output degli stream di bit il modulo HW dovrà
 INSERIRE ESEMPIO
 \end_layout
 
+\begin_layout Section
+Scelte progettuali
+\end_layout
+
 \begin_layout Standard
+Il modulo è stato pensato come una macchina a stati finiti con reset asincrono.
+ Per la gestione del numero delle parole da elaborare vengono usati due
+ registri 
+\noun on
+word_number 
+\noun default
+e 
+\noun on
+word_counter.
+\begin_inset Newline newline
+\end_inset
+
+
+\noun default
+ Nel primo viene copiato il byte nella posizione 0 che specifica quante
+ parole elaborare.
+ Il secondo viene incrementato ad ogni parola elaborata.
+\begin_inset Newline newline
+\end_inset
+
+La serializzazione avviene leggendo un byte alla volta, in modo da rendere
+ le operazioni di lettura e scrittura in memoria più semplici.
+\end_layout
+
+\begin_layout Standard
+\begin_inset ERT
+status open
+
+\begin_layout Plain Layout
+
+
+\backslash
+begin{tikzpicture}[->,>=stealth',shorten >=1pt,auto,node distance=2.5cm,
+ semithick, initial where=above, initial text={
+\backslash
+texttt{RESET}}]
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+tikzstyle{every state} = [font= 
+\backslash
+tiny]   
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+node[initial,state] (A)                    {
+\backslash
+texttt{IDLE}};   
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+node[state]         (B) [below of=A] 	  {
+\backslash
+texttt{WAIT-WORD-NUM }};   
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+node[state]        (C) [below of=B] 	  {
+\backslash
+texttt{SET-W0RD-NUM}};   
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+node[state]         (D) [below of=C] 	  {
+\backslash
+texttt{CMP-WORD-CNT}};   
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+node[state]         (E) [below of=D]       {
+\backslash
+texttt{WAIT-BUFFER-IN}};   
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+node[state]         (F) [below of=E]       {
+\backslash
+texttt{SET-BUFFER-IN}};  
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+node[state]         (G) [below of=F]       {
+\backslash
+texttt{COMPUTE}};   
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+node[state]         (H) [below of=G]       {
+\backslash
+texttt{WRITE-IN-BUFFER}};   
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+node[state]       (I) [right=4cm of H]   {
+\backslash
+texttt{COMPARE-BIT-COUNT}};  
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+node[state]         (J) [right=4cm of F]      {
+\backslash
+texttt{WRITE-MEMORY}};
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+node[state]         (K)  [right=4cm of D]  {
+\backslash
+texttt{DONE}};
+\end_layout
+
+\begin_layout Plain Layout
+
+ 
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+path (A) edge              node [pos=0.5]{
+\backslash
+texttt{I
+\backslash
+_START=1}} (B)  	  
+\end_layout
+
+\begin_layout Plain Layout
+
+(A) edge  [loop left] node {} (A) 
+\end_layout
+
+\begin_layout Plain Layout
+
+(A) edge   node {} (B)  
+\end_layout
+
+\begin_layout Plain Layout
+
+(B) edge   node {} (C) 
+\end_layout
+
+\begin_layout Plain Layout
+
+(C) edge   node {} (D)  
+\end_layout
+
+\begin_layout Plain Layout
+
+(D) edge   node {} (E)
+\end_layout
+
+\begin_layout Plain Layout
+
+(D) edge   node {} (K)
+\end_layout
+
+\begin_layout Plain Layout
+
+(E) edge   node {} (F)
+\end_layout
+
+\begin_layout Plain Layout
+
+(F) edge   node {} (G)
+\end_layout
+
+\begin_layout Plain Layout
+
+(G) edge   node {} (H)
+\end_layout
+
+\begin_layout Plain Layout
+
+(H) edge   node {} (I)
+\end_layout
+
+\begin_layout Plain Layout
+
+(J) edge    node {} (D)
+\end_layout
+
+\begin_layout Plain Layout
+
+(J) edge node {} (G)
+\end_layout
+
+\begin_layout Plain Layout
+
+(I) edge   node {} (J)
+\end_layout
+
+\begin_layout Plain Layout
+
+(I) edge   node {} (G)
+\end_layout
+
+\begin_layout Plain Layout
+
+(K) edge [bend right]  node {} (A);
+\end_layout
+
+\begin_layout Plain Layout
+
+ 
+\end_layout
+
+\begin_layout Plain Layout
+
+        
+\end_layout
+
+\begin_layout Plain Layout
+
+
+\backslash
+end{tikzpicture}
+\end_layout
+
+\end_inset
+
 
 \end_layout
 
-\begin_layout Section
-Scelte progettuali
+\begin_layout Subsection
+Descrizione ad alto livello
+\end_layout
+
+\begin_layout Enumerate
+La macchina parte da uno stato di 
+\noun on
+idle 
+\noun default
+in cui aspetta il segnale di 
+\noun on
+i_start
+\noun default
+ per iniziare.
+ Arrivato il segnale inizia a prepare la fase di lettura del primo byte
+ della memoria.
+ 
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+In questa fase viene inizializzato a zero anche il registro 
+\noun on
+word_counter 
+\noun default
+che terrà conto del numero di parole elaborato finora.
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Legge il primo byte e lo salva nel registro 
+\noun on
+word_number.
+\end_layout
+
+\begin_layout Enumerate
+Confronta il contenuto dei registri 
+\noun on
+word_number 
+\noun default
+e 
+\noun on
+word_counter.
+
+\noun default
+ 
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+Se ha elaborato tutte le parole porta il segnale 
+\noun on
+o_done 
+\noun default
+a 1 e va nello stato 
+\noun on
+done 
+\noun default
+in cui aspetta che 
+\noun on
+i_start
+\noun default
+ venga portato a 0 dal test bench.
+\end_layout
+
+\begin_layout Itemize
+In caso contrario legge la prossima parola di memoria e la copia 
+\noun on
+buffer_in 
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+Nello stato 
+\noun on
+compute 
+\noun default
+avviene la codifica convoluzionale un bit alla volta.
+ Viene usato il registro 
+\noun on
+buffer_index 
+\noun default
+per tenere traccia di quale bit sta facendo la codifica.
+\begin_inset Newline newline
+\end_inset
+
+V
+\end_layout
+
+\begin_layout Enumerate
+Lo stato successivo, 
+\noun on
+write_in_buffer
+\noun default
+, scrive i bit p1k e p2k nel 
+\noun on
+buffer_out.
+ 
+\noun default
+La posizione in cui vengono scritti i due bit è determinata dal valore di
+ 
+\noun on
+buffer_index 
+\noun default
+considerato in mod 4.
+\end_layout
+
+\begin_layout Enumerate
+In 
+\noun on
+compare_bit_count 
+\noun default
+si analizza il contenuto di 
+\noun on
+buffer_index
+\end_layout
+
+\begin_deeper
+\begin_layout Itemize
+Se è uguale a 7 o 3 vuol dire che 
+\noun on
+buffer_out 
+\noun default
+è pieno e deve essere scritto in memoria
+\end_layout
+
+\begin_layout Itemize
+In caso contrario si passa al prossimo bit e si ritorna allo stato di 
+\noun on
+compute
+\end_layout
+
+\end_deeper
+\begin_layout Enumerate
+La scrittura in memoria avviene nello stato 
+\noun on
+write_memory 
+\noun default
+.
+ In questo stato avviene pure il controllo su
+\noun on
+ buffer_index
+\noun default
+ per capire se ha finito di elaborare la parola in 
+\noun on
+buffer_in.
+ 
+\noun default
+In caso positivo torna nello stato 
+\noun on
+compare_word_count, 
+\noun default
+se no torna nello stato 
+\noun on
+compute 
+\noun default
+per inizare l'elaborazione della seconda metà della parola.
 \end_layout
 
 \begin_layout Section
 Risultati dei test
 \end_layout
 
+\begin_layout Standard
+È possibile fare vari test per controllare la corretta implementazione della
+ macchina e qui sotto vengono riportati quelli riteniamo siano i più significati
+vi.
+\end_layout
+
+\begin_layout Subsection
+Casi limite del numero di parole
+\end_layout
+
+\begin_layout Standard
+Nel caso in cui il primo byte sia tutto a zero il test bench controlla che
+ il modulo non elabori parole di memoria.
+ Questo avviene inizializzando porzioni di memoria con valori pseudocasuali
+ e controllare che, dopo che il segnale
+\noun on
+ o_done
+\noun default
+ sia stato portato a 1, non siano cambiate.
+\end_layout
+
+\begin_layout Subsection
+Memoria con più flussi senza reset
+\end_layout
+
+\begin_layout Subsection
+Memoria con più flussi con reset
+\end_layout
+
 \begin_layout Section
 Risultati della sintesi
+\end_layout
+
+\begin_layout Standard
+La FPGA su cui è stata fatta la sintesi è la Artix-7a200tfbg484-1 .
+ 
+\end_layout
+
+\begin_layout Subsection
+Utilizzazione dello spazio
+\end_layout
+
+\begin_layout Standard
+L'assenza di latch nella sintesi indica una corretta scrittura del codice
+ VHDL.
+ 
+\begin_inset Newline newline
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+\begin_inset Tabular
+<lyxtabular version="3" rows="4" columns="3">
+<features tabularvalignment="middle">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<column alignment="center" valignment="top">
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Tipo di elemento
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+n° usati
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+% sul totale
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+LUT
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+70
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0.05
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+FF
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+69
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0.03
+\end_layout
+
+\end_inset
+</cell>
+</row>
+<row>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+Latch
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0
+\end_layout
+
+\end_inset
+</cell>
+<cell alignment="center" valignment="top" topline="true" bottomline="true" leftline="true" rightline="true" usebox="none">
+\begin_inset Text
+
+\begin_layout Plain Layout
+0
+\end_layout
+
+\end_inset
+</cell>
+</row>
+</lyxtabular>
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Subsection
+Risultato dei Test Bench
+\end_layout
+
+\begin_layout Standard
+le cose vanno ben sotto i 100ns -> mostrare in quale test 
 \end_layout
 
 \end_body
