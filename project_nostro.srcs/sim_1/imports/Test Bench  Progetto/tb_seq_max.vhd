@@ -1,4 +1,4 @@
--- test : sequenza di lunghezza massima, cioè RAM(0) = "11111111"
+-- test : sequenza di lunghezza massima, cioï¿½ RAM(0) = "11111111"
 
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
@@ -9,7 +9,7 @@ entity project_tb is
 end project_tb;
 
 architecture projecttb of project_tb is
-constant c_CLOCK_PERIOD         : time := 100 ns;
+constant c_CLOCK_PERIOD         : time := 5 ns;
 signal   tb_done                : std_logic;
 signal   mem_address            : std_logic_vector (15 downto 0) := (others => '0');
 signal   tb_rst                 : std_logic := '0';

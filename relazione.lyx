@@ -83,12 +83,16 @@
 \begin_body
 
 \begin_layout Title
+Politecnico di Milano
+\begin_inset Newline newline
+\end_inset
+
 Prova Finale A.A.
  2021/2022 
 \begin_inset Newline newline
 \end_inset
 
-Reti Logiche
+Progetto di Reti Logiche
 \end_layout
 
 \begin_layout Author
@@ -153,8 +157,18 @@ Il progetto consiste nell'implementare un codificatore convoluzionale con
  la seguente macchina di Moore.
 \end_layout
 
-\begin_layout Verse
-INSERIRE IMMAGINE MACCHINA
+\begin_layout Standard
+\begin_inset Graphics
+	filename media/pasted1.png
+	scale 50
+
+\end_inset
+
+
+\end_layout
+
+\begin_layout Standard
+
 \end_layout
 
 \begin_layout Standard
@@ -167,6 +181,51 @@ Siccome il CC ha in input e in output degli stream di bit, il modulo HW
 
 \begin_layout Quote
 INSERIRE ESEMPIO
+\end_layout
+
+\begin_layout Paragraph
+Protocollo tra il modulo e la memoria
+\end_layout
+
+\begin_layout Standard
+L'elaborazione inizia quando il segnale di 
+\noun on
+start 
+\noun default
+in ingresso viene portato a 1 e rimane tale per tutta la durata della elaborazio
+ne.
+ Una volta scritta in memoria l'ultimo byte il modulo alza il segnale 
+\noun on
+done
+\noun default
+ che segnala il termine della elaborazione.
+ Il segnale 
+\noun on
+done 
+\noun default
+deve rimanere a 1 fino a che il test bench non porta 
+\noun on
+start 
+\noun default
+a 0.
+ Il test bench non può dare un altro segnale di 
+\noun on
+start 
+\noun default
+fino a che 
+\noun on
+done 
+\noun default
+non è stato portato a zero.
+ Il protocollo prevede quindi che il modulo debba supportare la codifica
+ di più flussi uno dopo l'altro.
+ Ad ogni nuovo flusso lo stato del CC viene resettato allo stato di partenza.
+ Il 
+\noun on
+reset 
+\noun default
+è necessario solo per la prima elaborazione, dato che dalla seconda in poi
+ basterà rispettare il protocollo appena descritto
 \end_layout
 
 \begin_layout Section
@@ -189,7 +248,7 @@ word_counter.
 
 \noun default
  Nel primo viene copiato il byte nella posizione 0 che specifica quante
- parole elaborare.
+ parole sono da elaborare.
  Il secondo viene incrementato ad ogni parola elaborata.
 \begin_inset Newline newline
 \end_inset
@@ -434,7 +493,7 @@ end{tikzpicture}
 \end_layout
 
 \begin_layout Subsection
-Descrizione ad alto livello
+Descrizione 
 \end_layout
 
 \begin_layout Enumerate
@@ -447,7 +506,7 @@ in cui aspetta il segnale di
 i_start
 \noun default
  per iniziare.
- Arrivato il segnale inizia a prepare la fase di lettura del primo byte
+ Arrivato il segnale inizia a preparare la fase di lettura del primo byte
  della memoria.
  
 \end_layout
@@ -466,10 +525,23 @@ che terrà conto del numero di parole elaborato finora.
 Legge il primo byte e lo salva nel registro 
 \noun on
 word_number.
+ 
+\noun default
+Questo avviene negli stati 
+\noun on
+wait_word_number
+\noun default
+ e 
+\noun on
+set_word_number.
 \end_layout
 
 \begin_layout Enumerate
-Confronta il contenuto dei registri 
+Nello stato 
+\noun on
+compare_word_count
+\noun default
+ confronta il contenuto dei registri 
 \noun on
 word_number 
 \noun default
@@ -501,7 +573,16 @@ i_start
 \begin_layout Itemize
 In caso contrario legge la prossima parola di memoria e la copia 
 \noun on
-buffer_in 
+buffer_in.
+ 
+\noun default
+La fase di caricamento dalla memoria avviene negli stati
+\noun on
+ wait_buffer_in 
+\noun default
+e 
+\noun on
+set_buffer_in.
 \end_layout
 
 \end_deeper
@@ -510,7 +591,7 @@ Nello stato
 \noun on
 compute 
 \noun default
-avviene la codifica convoluzionale un bit alla volta.
+avviene la codifica convoluzionale .
  Viene usato il registro 
 \noun on
 buffer_index 
@@ -519,7 +600,7 @@ per tenere traccia di quale bit sta facendo la codifica.
 \begin_inset Newline newline
 \end_inset
 
-V
+
 \end_layout
 
 \begin_layout Enumerate
@@ -556,7 +637,7 @@ Se è uguale a 7 o 3 vuol dire che
 \noun on
 buffer_out 
 \noun default
-è pieno e deve essere scritto in memoria
+è pieno e deve essere scritto in memoria.
 \end_layout
 
 \begin_layout Itemize
@@ -576,7 +657,7 @@ write_memory
 \noun on
  buffer_index
 \noun default
- per capire se ha finito di elaborare la parola in 
+ per capire se ha elaborato entrambe le metà di 
 \noun on
 buffer_in.
  
@@ -589,7 +670,7 @@ se no torna nello stato
 \noun on
 compute 
 \noun default
-per inizare l'elaborazione della seconda metà della parola.
+per iniziare l'elaborazione della seconda metà della parola.
 \end_layout
 
 \begin_layout Section
@@ -597,9 +678,11 @@ Risultati dei test
 \end_layout
 
 \begin_layout Standard
-È possibile fare vari test per controllare la corretta implementazione della
- macchina e qui sotto vengono riportati quelli riteniamo siano i più significati
-vi.
+In questa sezione vengono riportati i test che abbiamo ritenuto più significativ
+i per la testare la corretta implementazione del modulo.
+ Tutti i test sono stati eseguiti in behavioural, functional post-sintesi
+ e timing post-sintesi.
+ 
 \end_layout
 
 \begin_layout Subsection
@@ -618,11 +701,13 @@ Nel caso in cui il primo byte sia tutto a zero il test bench controlla che
 \end_layout
 
 \begin_layout Subsection
-Memoria con più flussi senza reset
+Memoria con più flussi
 \end_layout
 
-\begin_layout Subsection
-Memoria con più flussi con reset
+\begin_layout Standard
+Questa famiglia di test serve per testare il protocollo per la codifica
+ dei flussi successivi al primo.
+ Sono possibili vari test di questo tipo
 \end_layout
 
 \begin_layout Section
@@ -698,7 +783,7 @@ LUT
 \begin_inset Text
 
 \begin_layout Plain Layout
-70
+73
 \end_layout
 
 \end_inset
@@ -727,7 +812,7 @@ FF
 \begin_inset Text
 
 \begin_layout Plain Layout
-69
+68
 \end_layout
 
 \end_inset
@@ -779,11 +864,36 @@ Latch
 \end_layout
 
 \begin_layout Subsection
+Timing report
+\end_layout
+
+\begin_layout Standard
+La specifica richiede un clock di almeno 100ns.
+ Nel timing report si vede che il 
+\emph on
+data path delay 
+\emph default
+è di 4.037 ns.
+ Si può quindi ipotizzare un corretto funzionamento con frequenze di clock
+ fino ai 247 Mhz.
+\end_layout
+
+\begin_layout Subsection
 Risultato dei Test Bench
 \end_layout
 
 \begin_layout Standard
-le cose vanno ben sotto i 100ns -> mostrare in quale test 
+Dato che il timing report ci ha indicato che il modulo avrebbe potuto funzionare
+ ben sotto i 100ns abbiamo provato ad abbassare il tempo di clock dei test
+ bench per verificare l'ipotesi fatta.
+ Tutti i test provati hanno funzionato fino a 7ns, con alcuni di quelli
+ più semplici, trattasi di quelli senza flussi o segnali di reset, che hanno
+ funzionato anche a 5ns.
+ Ciò conferma che il 
+\emph on
+data path delay
+\emph default
+ fornisce una buona stima della massima frequenza di clock.
 \end_layout
 
 \end_body
