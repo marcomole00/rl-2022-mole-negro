@@ -7,7 +7,6 @@
 -- Marco Mole' (Codice Persona 10676087 Matricola 932376)
 -- 
 ----------------------------------------------------------------------------------
---this is a test commit
 library IEEE;
 use IEEE.STD_LOGIC_1164.ALL;
 use IEEE.NUMERIC_STD.ALL;
@@ -56,7 +55,7 @@ architecture Behavioral of project_reti_logiche is
 
     
 begin
-    process(i_clk, i_rst)
+    FINATE_STATE_MACHINE: process(i_clk, i_rst)
     begin
         -- Takes into account the asynchronous behaviour of i_rst
         if (i_rst = '1') then
@@ -109,49 +108,7 @@ begin
                     Uk <= i_data(7);
                     curr_state <= COMPUTE;
 
-                when COMPUTE =>
-                    case( convolution_state ) is
-                        when S0 =>
-                            if(Uk = '0') then
-                                convolution_state <= S0;
-                                p1k <= '0';
-                                p2k <= '0';
-                            elsif (Uk = '1') then
-                                convolution_state <= S2;
-                                p1k <= '1';
-                                p2k <= '1';                            
-                            end if;
-                        when S1 =>
-                            if(Uk = '0') then
-                                convolution_state <= S0;
-                                p1k <= '1';
-                                p2k <= '1';
-                            elsif (Uk = '1') then
-                                convolution_state <= S2;
-                                p1k <= '0';
-                                p2k <= '0';                            
-                            end if;
-                        when S2 =>
-                            if(Uk = '0') then
-                                convolution_state <= S1;
-                                p1k <= '0';
-                                p2k <= '1';
-                            elsif (Uk = '1') then
-                                convolution_state <= S3;
-                                p1k <= '1';
-                                p2k <= '0';                            
-                            end if;
-                        when S3 =>
-                            if(Uk = '0') then
-                                convolution_state <= S1;
-                                p1k <= '1';
-                                p2k <= '0';
-                            elsif (Uk = '1') then
-                                convolution_state <= S3;
-                                p1k <= '0';
-                                p2k <= '1';                            
-                            end if;                    
-                    end case ;
+                when COMPUTE =>                    
                     curr_state <= WRITE_IN_BUFFER;
 
                 when WRITE_IN_BUFFER =>
@@ -220,6 +177,54 @@ begin
                 when others =>
                 
                 end case;
+        end if;
+    end process;
+
+    CODIFICATORE: process(i_clk, curr_state, Uk, convolution_state)
+    begin
+        if (rising_edge(i_clk) AND curr_state = COMPUTE) then
+            case( convolution_state ) is
+                when S0 =>
+                    if(Uk = '0') then
+                        convolution_state <= S0;
+                        p1k <= '0';
+                        p2k <= '0';
+                    elsif (Uk = '1') then
+                        convolution_state <= S2;
+                        p1k <= '1';
+                        p2k <= '1';                            
+                    end if;
+                when S1 =>
+                    if(Uk = '0') then
+                        convolution_state <= S0;
+                        p1k <= '1';
+                        p2k <= '1';
+                    elsif (Uk = '1') then
+                        convolution_state <= S2;
+                        p1k <= '0';
+                        p2k <= '0';                            
+                    end if;
+                when S2 =>
+                    if(Uk = '0') then
+                        convolution_state <= S1;
+                        p1k <= '0';
+                        p2k <= '1';
+                    elsif (Uk = '1') then
+                        convolution_state <= S3;
+                        p1k <= '1';
+                        p2k <= '0';                            
+                    end if;
+                when S3 =>
+                    if(Uk = '0') then
+                        convolution_state <= S1;
+                        p1k <= '1';
+                        p2k <= '0';
+                    elsif (Uk = '1') then
+                        convolution_state <= S3;
+                        p1k <= '0';
+                        p2k <= '1';                            
+                    end if;                    
+            end case ;
         end if;
     end process;
 end Behavioral;
