@@ -74,7 +74,6 @@ begin
                         o_done <= '0';
                         o_address <= (others => '0');
                         buffer_index <= 7;
-                        convolution_state <= S0;
                         curr_state <= WAIT_WORD_NUMBER;
                     end if ;
                 
@@ -180,10 +179,14 @@ begin
         end if;
     end process;
 
-    CODIFICATORE: process(i_clk, curr_state, Uk, convolution_state)
+    ENCODER: process(i_clk, i_rst, curr_state)
     begin
-        if (rising_edge(i_clk) AND curr_state = COMPUTE) then
-            case( convolution_state ) is
+        -- every time the fsm gets ready to start a new computation, we have to reset the encoder to its S0 state
+        if (i_rst = '1' OR curr_state = DONE) then
+            convolution_state <= S0;
+
+        elsif (rising_edge(i_clk) AND curr_state = COMPUTE) then
+            case convolution_state is
                 when S0 =>
                     if(Uk = '0') then
                         convolution_state <= S0;
@@ -227,4 +230,5 @@ begin
             end case ;
         end if;
     end process;
+    
 end Behavioral;
